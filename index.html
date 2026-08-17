@@ -51,12 +51,28 @@
   @media (max-width:1000px){main{grid-template-columns:1fr}#map{height:50vh}}
   #map{height:calc(100vh - 190px);min-height:440px;background:var(--ink-2)}
   .leaflet-container{font-family:"Space Grotesk",sans-serif;background:#0e141b}
-  .leaflet-tile-pane{filter:grayscale(1) invert(.92) hue-rotate(180deg) brightness(.92) contrast(.9)}
+  .leaflet-tile-pane{filter:invert(.93) hue-rotate(185deg) saturate(.35) contrast(1.05) brightness(.95)}
   .leaflet-control-attribution{background:rgba(11,15,20,.8)!important;color:var(--muted)!important;font-size:10px}
   .leaflet-control-attribution a{color:var(--muted)!important}
+  .leaflet-bar a{background:var(--ink-2);color:var(--text);border-color:var(--line)}
+  .leaflet-bar a:hover{background:#1d2733;color:#fff}
   .pin{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5);overflow:hidden;display:grid;place-items:center}
   .pin img{width:100%;height:100%;object-fit:contain;padding:3px;background:#fff}
-  .pin .mono-i{font:600 11px "Space Grotesk",sans-serif;color:#0b0f14}
+  .pin span{font:600 11px "Space Grotesk",sans-serif;color:#0b0f14}
+  .leaflet-tooltip{background:var(--paper);color:var(--ink);border:0;border-radius:7px;font:400 12px "Space Grotesk",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .leaflet-tooltip-top:before{border-top-color:var(--paper)}
+  .leaflet-popup-content-wrapper{background:var(--paper);color:var(--ink);border-radius:12px}
+  .leaflet-popup-tip{background:var(--paper)}
+  .leaflet-popup-content{margin:13px 15px;font-size:13px;line-height:1.5}
+  .leaflet-popup-content strong{display:block;font-size:15px}
+  .leaflet-popup-content em{font-style:normal;color:#5b6474;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
+  .plabel{font:500 11px "Space Grotesk",sans-serif;letter-spacing:.09em;text-transform:uppercase;color:rgba(232,237,243,.86);text-shadow:0 1px 4px rgba(0,0,0,.95);white-space:nowrap;pointer-events:none}
+  .cluster{position:relative;display:grid;place-items:center;border-radius:50%;font:600 14px "Space Grotesk",sans-serif;color:#12180f;cursor:pointer;transition:transform .12s}
+  .cluster:hover{transform:scale(1.08)}
+  .cluster i{position:absolute;inset:-9px;border-radius:50%;opacity:.28;background:inherit}
+  .cluster b{position:relative;z-index:1;font-weight:600}
+  .leaflet-tooltip{background:var(--paper);color:var(--ink);border:0;border-radius:7px;font:400 12px "Space Grotesk",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .leaflet-tooltip-top:before{border-top-color:var(--paper)}
   .leaflet-popup-content-wrapper{background:var(--paper);color:var(--ink);border-radius:12px}
   .leaflet-popup-tip{background:var(--paper)}
   .leaflet-popup-content{margin:13px 15px;font-size:13px;line-height:1.5}
@@ -117,7 +133,7 @@
 </div>
 
 <div class="subhead">
-  <p>Where the city actually builds — companies, funds and hubs plotted by the district they work out of. Missing someone? Hit Submit.</p>
+  <p>Where the city actually builds — companies, funds and hubs plotted by the district they work out of. Bubbles show how many sit in each district — zoom in for individual companies. Missing someone? Hit Submit.</p>
   <div class="stats">
     <div class="stat"><b id="s-co">—</b><i>Entities</i></div>
     <div class="stat"><b id="s-di">—</b><i>Districts</i></div>
@@ -255,12 +271,91 @@ document.getElementById("reset").onclick=()=>{Object.values(sels).forEach(s=>s.v
 
 /* map */
 const map=L.map("map",{zoomControl:true}).setView([25.155,55.26],11);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:18}).addTo(map);
+/* Esri dark canvas: the only no-key raster source whose labels include English */
+const ESRI="Tiles © Esri";
+L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",{attribution:ESRI,maxZoom:16}).addTo(map);
+
+
+/* English district labels, drawn by us and collision-checked */
+const PLACES=[
+  ["Deira",25.2697,55.3095,1],["Bur Dubai",25.2560,55.2960,1],["Downtown",25.1972,55.2744,1],
+  ["Palm Jumeirah",25.1124,55.1390,1],["Dubai Marina",25.0805,55.1403,1],["Silicon Oasis",25.1207,55.3775,1],
+  ["Expo City",24.9600,55.1500,1],["Jebel Ali",25.0100,55.1000,1],["Mirdif",25.2200,55.4200,1],
+  ["Business Bay",25.1857,55.2622,2],["Al Quoz",25.1400,55.2300,2],["Jumeirah",25.2050,55.2450,2],
+  ["JLT",25.0693,55.1414,2],["Internet City",25.0955,55.1600,2],["Media City",25.0947,55.1523,2],
+  ["Al Barsha",25.1100,55.1990,2],["Dubai Hills",25.1050,55.2450,2],["Dubai Airport",25.2530,55.3657,2],
+  ["Design District",25.1866,55.2985,3],["Festival City",25.2220,55.3520,3],["Academic City",25.1230,55.4180,3],
+  ["Motor City",25.0500,55.2400,3],["Arabian Ranches",25.0530,55.2700,3],["The World Islands",25.2230,55.1750,3],
+  ["Al Warqa",25.1900,55.4000,3],["Nad Al Sheba",25.1420,55.3230,3],["Al Sufouh",25.1040,55.1670,3]
+];
+const labels=L.layerGroup().addTo(map);
+function drawLabels(boxes){
+  labels.clearLayers();
+  const z=map.getZoom(),placed=boxes.slice(),W=160,H=15;
+  const free=box=>!placed.some(b=>Math.abs(b.x-box.x)<(b.w+box.w)/2+6&&Math.abs(b.y-box.y)<(b.h+box.h)/2+4);
+  PLACES.filter(p=>z>=(p[3]===1?9:p[3]===2?12:13)).forEach(([n,la,ln])=>{
+    const p=map.latLngToLayerPoint(L.latLng(la,ln)),w=n.length*7.4+8;
+    /* candidate slots: below, above, right, left, further below/above */
+    const slots=[
+      [0,26,[W/2,-18],"center"],[0,-26,[W/2,H+18],"center"],
+      [w/2+22,0,[-22,H/2],"left"],[-(w/2+22),0,[W+22,H/2],"right"],
+      [0,44,[W/2,-36],"center"],[0,-44,[W/2,H+36],"center"]
+    ];
+    const hit=slots.find(s=>free({x:p.x+s[0],y:p.y+s[1],w,h:H}));
+    if(!hit)return;
+    placed.push({x:p.x+hit[0],y:p.y+hit[1],w,h:H});
+    labels.addLayer(L.marker([la,ln],{interactive:false,zIndexOffset:-500,
+      icon:L.divIcon({className:"",iconSize:[W,H],iconAnchor:hit[2],
+        html:'<div class="plabel" style="text-align:'+hit[3]+'">'+n+'</div>'})}));
+  });
+}
 items.forEach(it=>{
   it._m=L.marker([it.lat,it.lng],{icon:L.divIcon({className:"",html:`<div class="pin">${logoHTML(it)}</div>`,iconSize:[30,30],iconAnchor:[15,15]}),title:it.name});
   it._m.bindPopup(`<strong>${it.name}</strong><em>${it.sector} · ${it.district}</em><div style="margin-top:6px">${it.desc}</div>${it.url?`<div style="margin-top:8px"><a href="https://${it.url}" target="_blank" rel="noopener" style="color:#0b0f14;border-bottom:1px solid #b6bcc7">${it.url}</a></div>`:""}`);
 });
-const layer=L.layerGroup(items.map(i=>i._m)).addTo(map);
+const layer=L.layerGroup().addTo(map);
+const CLUSTER_ZOOM=13;
+const clusterColor=n=>n>=12?"#ff7a66":n>=6?"#e0c48c":"#b8e068";
+const clusterSize=n=>Math.min(62,32+Math.sqrt(n)*7);
+function drawMap(vis){
+  layer.clearLayers();
+  if(map.getZoom()>=CLUSTER_ZOOM){
+    vis.forEach(it=>layer.addLayer(it._m));
+    drawLabels(vis.map(it=>{const p=map.latLngToLayerPoint(L.latLng(it.lat,it.lng));return{x:p.x,y:p.y,w:34,h:34};}));
+    return;
+  }
+  const by=new Map();
+  vis.forEach(it=>{(by.get(it.district)||by.set(it.district,[]).get(it.district)).push(it);});
+  let groups=[...by].map(([district,g])=>{
+    const p=map.latLngToLayerPoint(L.latLng(DISTRICTS[district]));
+    return {names:[district],n:g.length,x:p.x,y:p.y};
+  }).sort((a,b)=>b.n-a.n);
+  const rad=g=>clusterSize(g.n)/2+7;
+  for(let pass=0;pass<14;pass++){
+    let merged=false;
+    outer: for(let i=0;i<groups.length;i++) for(let j=i+1;j<groups.length;j++){
+      const a=groups[i],b=groups[j];
+      if(Math.hypot(a.x-b.x,a.y-b.y)<rad(a)+rad(b)){
+        const tot=a.n+b.n;
+        groups[i]={names:a.names.concat(b.names),n:tot,x:(a.x*a.n+b.x*b.n)/tot,y:(a.y*a.n+b.y*b.n)/tot};
+        groups.splice(j,1);merged=true;break outer;
+      }
+    }
+    if(!merged)break;
+    groups.sort((a,b)=>b.n-a.n);
+  }
+  groups.forEach((g,idx)=>{
+    const n=g.n,s=clusterSize(n),ll=map.layerPointToLatLng(L.point(g.x,g.y));
+    const icon=L.divIcon({className:"",iconSize:[s,s],iconAnchor:[s/2,s/2],
+      html:`<div class="cluster" style="width:${s}px;height:${s}px;background:${clusterColor(n)}"><i></i><b>${n}</b></div>`});
+    const m=L.marker(ll,{icon,title:g.names.join(", ")+" — "+n,zIndexOffset:400-idx*10});
+    m.on("click",()=>map.setView(ll,g.names.length>1?13:14,{animate:true}));
+    m.bindTooltip(`<strong>${g.names.join(" · ")}</strong><br>${n} ${n===1?"entity":"entities"}`,{direction:"top",offset:[0,-s/2],opacity:1});
+    layer.addLayer(m);
+  });
+  drawLabels(groups.map(g=>{const s=clusterSize(g.n);return{x:g.x,y:g.y,w:s+8,h:s+8};}));
+}
+map.on("zoomend moveend",()=>drawMap(items.filter(match)));
 
 /* view toggle */
 const main=document.getElementById("main"),vMap=document.getElementById("v-map"),vGrid=document.getElementById("v-grid");
@@ -280,7 +375,7 @@ function match(it){
 }
 function render(){
   const vis=items.filter(match);
-  layer.clearLayers();vis.forEach(it=>layer.addLayer(it._m));
+  drawMap(vis);
   count.textContent=vis.length+" of "+items.length+" shown";
   list.innerHTML="";
   if(!vis.length){list.innerHTML='<div class="empty">Nothing matches those filters.</div>';return;}
@@ -288,7 +383,11 @@ function render(){
     const el=document.createElement("div");el.className="card";
     el.innerHTML=`<div class="logo">${logoHTML(it)}</div>
       <div><h3>${it.name}</h3><p>${it.desc}</p><div class="tags"><span class="tag">${it.district}</span><span class="tag">${it.sector}</span>${it.stage!=="—"?`<span class="tag">${it.stage}</span>`:""}</div></div>`;
-    el.onclick=()=>{if(main.classList.contains("grid-view"))setView(false);map.setView([it.lat,it.lng],14,{animate:true});it._m.openPopup();};
+    el.onclick=()=>{
+      if(main.classList.contains("grid-view"))setView(false);
+      map.setView([it.lat,it.lng],15,{animate:true});
+      setTimeout(()=>it._m.openPopup(),400);
+    };
     list.appendChild(el);
   });
 }
