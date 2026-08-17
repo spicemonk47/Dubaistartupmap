@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dubai Startup Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --ink:#0b0f14; --ink-2:#131a22; --line:#243040; --line-soft:#1b232e;
+    --paper:#f4f2ed; --muted:#8494a6; --text:#e8edf3; --sand:#e0c48c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--ink);color:var(--text);font-family:"Space Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--sand);text-decoration:none}
+  a:hover{color:#fff}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+  .bar{position:sticky;top:0;z-index:900;background:rgba(11,15,20,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft);
+       display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 20px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:-0.02em;white-space:nowrap;margin-right:4px}
+  .brand b{color:var(--sand);font-weight:700}
+  .brand .pinico{width:10px;height:10px;border-radius:50%;background:var(--sand);box-shadow:0 0 0 4px rgba(224,196,140,.18)}
+  input[type=search],select{background:var(--ink-2);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:999px;
+       font:400 13px "Space Grotesk",sans-serif;outline:none;appearance:none;cursor:pointer}
+  input[type=search]{flex:1;min-width:180px;cursor:text;border-radius:999px;padding-left:15px}
+  input[type=search]:focus,select:focus{border-color:var(--sand)}
+  select{padding-right:30px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+       background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  .toggle{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+  .toggle button{border:0;background:transparent;color:var(--muted);font:500 12.5px "Space Grotesk",sans-serif;padding:7px 15px;border-radius:999px;cursor:pointer}
+  .toggle button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+  .submit-btn{border:0;background:var(--sand);color:#20180a;font:600 13px "Space Grotesk",sans-serif;padding:11px 20px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .submit-btn:hover{background:#efd8a8}
+
+  .subhead{padding:16px 20px 14px;border-bottom:1px solid var(--line-soft);display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-end}
+  .subhead p{margin:0;color:var(--muted);font-size:13.5px;max-width:62ch;text-wrap:pretty}
+  .stats{display:flex;gap:26px}
+  .stat b{display:block;font-size:22px;font-weight:600;letter-spacing:-0.01em}
+  .stat i{font-style:normal;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+  main{display:grid;grid-template-columns:minmax(0,1fr) 420px}
+  main.grid-view{grid-template-columns:1fr}
+  main.grid-view #map{display:none}
+  main.grid-view aside{border-left:none}
+  @media (max-width:1000px){main{grid-template-columns:1fr}#map{height:50vh}}
+  #map{height:calc(100vh - 190px);min-height:440px;background:var(--ink-2)}
+  .leaflet-container{font-family:"Space Grotesk",sans-serif;background:#0e141b}
+  .leaflet-tile-pane{filter:grayscale(1) invert(.92) hue-rotate(180deg) brightness(.92) contrast(.9)}
+  .leaflet-control-attribution{background:rgba(11,15,20,.8)!important;color:var(--muted)!important;font-size:10px}
+  .leaflet-control-attribution a{color:var(--muted)!important}
+  .pin{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5);overflow:hidden;display:grid;place-items:center}
+  .pin img{width:100%;height:100%;object-fit:contain;padding:3px;background:#fff}
+  .pin .mono-i{font:600 11px "Space Grotesk",sans-serif;color:#0b0f14}
+  .leaflet-popup-content-wrapper{background:var(--paper);color:var(--ink);border-radius:12px}
+  .leaflet-popup-tip{background:var(--paper)}
+  .leaflet-popup-content{margin:13px 15px;font-size:13px;line-height:1.5}
+  .leaflet-popup-content strong{display:block;font-size:15px}
+  .leaflet-popup-content em{font-style:normal;color:#5b6474;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
+
+  aside{border-left:1px solid var(--line-soft);display:flex;flex-direction:column;max-height:calc(100vh - 190px)}
+  main.grid-view aside{max-height:none}
+  @media (max-width:1000px){aside{border-left:none;border-top:1px solid var(--line-soft);max-height:none}}
+  .aside-head{padding:13px 20px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .aside-head span:last-child{cursor:pointer}
+  .list{overflow-y:auto}
+  main.grid-view .list{overflow:visible;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;background:var(--line-soft)}
+  main.grid-view .card{border-bottom:0;background:var(--ink)}
+  .card{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:15px 20px;border-bottom:1px solid var(--line-soft);cursor:pointer;align-items:start}
+  .card:hover{background:var(--ink-2)}
+  .logo{width:38px;height:38px;border-radius:9px;background:#fff;display:grid;place-items:center;overflow:hidden;flex:none}
+  .logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+  .logo span{font:600 14px "Space Grotesk",sans-serif;color:#0b0f14}
+  .card h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-0.01em}
+  .card p{margin:4px 0 0;font-size:12.5px;color:var(--muted);line-height:1.45;text-wrap:pretty}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:3px 7px;border-radius:4px}
+  .empty{padding:40px 20px;color:var(--muted);font-size:13px}
+  footer{border-top:1px solid var(--line-soft);padding:18px 20px 40px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
+
+  .overlay{position:fixed;inset:0;background:rgba(4,7,10,.72);backdrop-filter:blur(4px);z-index:1200;display:none;place-items:center;padding:24px;overflow-y:auto}
+  .overlay.open{display:grid}
+  .modal{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;width:min(560px,100%);padding:26px}
+  .modal h2{margin:0;font-size:22px;letter-spacing:-0.02em}
+  .modal .hint{margin:6px 0 20px;color:var(--muted);font-size:13px;text-wrap:pretty}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .fields .full{grid-column:1/-1}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .field input,.field select,.field textarea{background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;
+       font:400 13.5px "Space Grotesk",sans-serif;outline:none;appearance:none}
+  .field select{cursor:pointer}
+  .field textarea{resize:vertical;min-height:78px}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--sand)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .ghost{border:1px solid var(--line);background:transparent;color:var(--text);font:500 13px "Space Grotesk",sans-serif;padding:11px 18px;border-radius:999px;cursor:pointer}
+  .thanks{display:none;text-align:center;padding:10px 0 4px}
+  .thanks.on{display:block}
+  .thanks h2{margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="brand"><i class="pinico"></i>Dubai <b>Startup Map</b></div>
+  <input type="search" id="q" placeholder="Search startups, sectors, districts…" autocomplete="off">
+  <select id="f-type"><option value="">All types</option></select>
+  <select id="f-district"><option value="">All areas</option></select>
+  <select id="f-stage"><option value="">All stages</option></select>
+  <select id="f-sector"><option value="">All sectors</option></select>
+  <div class="toggle"><button id="v-map" aria-pressed="true">Map</button><button id="v-grid" aria-pressed="false">Grid</button></div>
+  <button class="submit-btn" id="open-form">Submit</button>
+</div>
+
+<div class="subhead">
+  <p>Where the city actually builds — companies, funds and hubs plotted by the district they work out of. Missing someone? Hit Submit.</p>
+  <div class="stats">
+    <div class="stat"><b id="s-co">—</b><i>Entities</i></div>
+    <div class="stat"><b id="s-di">—</b><i>Districts</i></div>
+    <div class="stat"><b id="s-se">—</b><i>Sectors</i></div>
+  </div>
+</div>
+
+<main id="main">
+  <div id="map"></div>
+  <aside>
+    <div class="aside-head"><span id="count">—</span><span id="reset" class="mono">clear ×</span></div>
+    <div class="list" id="list"></div>
+  </aside>
+</main>
+
+<footer>
+  <span>Positions are district-level, not exact addresses. Community reference — verify before citing.</span>
+  <span class="mono">v2 · Aug 2026</span>
+</footer>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div id="form-wrap">
+      <h2>Add a company to the map</h2>
+      <p class="hint">Submissions are reviewed before they appear. Everything goes straight to the map maintainer.</p>
+      <form id="submit-form" action="https://formsubmit.co/anieeshmenon@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="Dubai Startup Map — new submission">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_template" value="table">
+        <input type="text" name="_honey" style="display:none">
+        <div class="fields">
+          <div class="field full"><label for="n">Company name *</label><input id="n" name="Company" required></div>
+          <div class="field"><label for="w">Website</label><input id="w" name="Website" placeholder="example.ae"></div>
+          <div class="field"><label for="li">LinkedIn</label><input id="li" name="LinkedIn"></div>
+          <div class="field"><label for="t">Type</label><select id="t" name="Type"></select></div>
+          <div class="field"><label for="d">District *</label><select id="d" name="District" required></select></div>
+          <div class="field"><label for="se">Sector</label><select id="se" name="Sector"></select></div>
+          <div class="field"><label for="st">Stage</label><select id="st" name="Stage"></select></div>
+          <div class="field"><label for="fy">Founded</label><input id="fy" name="Founded" placeholder="2023"></div>
+          <div class="field"><label for="em">Your email *</label><input id="em" type="email" name="email" required></div>
+          <div class="field full"><label for="ds">One-line description *</label><textarea id="ds" name="Description" required></textarea></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="close-form">Cancel</button>
+          <button type="submit" class="submit-btn">Send submission</button>
+        </div>
+      </form>
+    </div>
+    <div class="thanks" id="thanks">
+      <h2>Sent — thank you.</h2>
+      <p class="hint">We'll review and add it to the next map update.</p>
+      <div class="modal-actions" style="justify-content:center"><button class="ghost" id="close-thanks">Close</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DISTRICTS = {
+  "DIFC":[25.2110,55.2795], "Dubai Internet City":[25.0955,55.1600], "Dubai Media City":[25.0947,55.1523],
+  "Business Bay":[25.1857,55.2622], "JLT / DMCC":[25.0693,55.1414], "Dubai Design District":[25.1866,55.2985],
+  "Dubai Silicon Oasis":[25.1207,55.3775], "Downtown Dubai":[25.1972,55.2744], "Al Quoz":[25.1400,55.2300],
+  "Dubai Marina":[25.0805,55.1403], "Deira":[25.2697,55.3095], "Expo City":[24.9600,55.1500], "DAFZA":[25.2600,55.3600]
+};
+const D = [
+  ["Careem","Super-app for rides, deliveries and payments; the region's first unicorn.","Company","Mobility","Late","Dubai Internet City","careem.com"],
+  ["Tabby","Buy-now-pay-later across the GCC, now a licensed fintech.","Company","Fintech","Late","DIFC","tabby.ai"],
+  ["Kitopi","Cloud-kitchen platform operating brands across MENA.","Company","Food & Delivery","Late","Dubai Design District","kitopi.com"],
+  ["Property Finder","Property search portal for the Gulf.","Company","PropTech","Late","Dubai Internet City","propertyfinder.ae"],
+  ["Bayut","Property marketplace, part of Dubizzle Group.","Company","PropTech","Late","Dubai Internet City","bayut.com"],
+  ["Dubizzle","Classifieds marketplace for the UAE.","Company","E-commerce","Late","Dubai Internet City","dubizzle.com"],
+  ["Huspy","Digital mortgage and home-buying platform.","Company","PropTech","Growth","Business Bay","huspy.com"],
+  ["Swvl","Mass-transit bus booking, built in Dubai after Cairo.","Company","Mobility","Late","Business Bay","swvl.com"],
+  ["Pure Harvest Smart Farms","Controlled-environment agriculture for the Gulf climate.","Company","AgriTech","Growth","Business Bay","pureharvest.ag"],
+  ["Yalla Group","Voice-centric social and casual gaming for MENA.","Company","Consumer","Late","JLT / DMCC","yalla.com"],
+  ["Postpay","Instalment payments for regional retailers.","Company","Fintech","Growth","DIFC","postpay.io"],
+  ["Ziina","Peer-to-peer and merchant payments app.","Company","Fintech","Early","DIFC","ziina.com"],
+  ["Sarwa","Robo-advisory and retail investing for the Gulf.","Company","Fintech","Growth","DIFC","sarwa.co"],
+  ["Baraka","Commission-free investing in US equities from MENA.","Company","Fintech","Early","DIFC","getbaraka.com"],
+  ["Lean Technologies","Open-banking API infrastructure for the region.","Company","Fintech","Growth","DIFC","leantech.me"],
+  ["Fresha","Booking and payments OS for salons and spas.","Company","B2B SaaS","Late","DIFC","fresha.com"],
+  ["TruKKer","Digital freight network for Gulf trucking.","Company","Mobility","Growth","JLT / DMCC","trukker.com"],
+  ["Cafu","On-demand fuel and car care delivery.","Company","Mobility","Growth","Dubai Silicon Oasis","cafu.com"],
+  ["Fetchr","Address-free logistics and last-mile delivery.","Company","Mobility","Growth","Dubai Silicon Oasis","fetchr.us"],
+  ["Washmen","On-demand laundry and dry cleaning.","Company","Consumer","Growth","Al Quoz","washmen.com"],
+  ["Cartlow","Re-commerce for returned and refurbished goods.","Company","E-commerce","Growth","Deira","cartlow.com"],
+  ["Mumzworld","Mother, baby and child e-commerce for MENA.","Company","E-commerce","Late","Dubai Media City","mumzworld.com"],
+  ["Namshi","Fashion e-commerce built for the Gulf.","Company","E-commerce","Late","Al Quoz","namshi.com"],
+  ["Alma Health","Chronic-care management and pharmacy delivery.","Company","HealthTech","Early","Business Bay","almahealth.com"],
+  ["Klaim","Insurance-claim financing for clinics.","Company","HealthTech","Early","DIFC","klaim.ai"],
+  ["Okadoc","Doctor booking and telehealth across the UAE.","Company","HealthTech","Growth","Business Bay","okadoc.com"],
+  ["Zbooni","Conversational commerce for chat-based sellers.","Company","B2B SaaS","Early","Dubai Media City","zbooni.com"],
+  ["Bayzat","HR, payroll and insurance platform for UAE employers.","Company","B2B SaaS","Growth","Business Bay","bayzat.com"],
+  ["Astra Tech","Consumer tech group behind botim and PayBy.","Company","Consumer","Late","Downtown Dubai","astratech.com"],
+  ["Talabat","Food and grocery delivery across the region.","Company","Food & Delivery","Late","Business Bay","talabat.com"],
+  ["Kibsons","Direct-to-door fresh grocery operation.","Company","Food & Delivery","Growth","Al Quoz","kibsons.com"],
+  ["BECO Capital","Early-stage VC, one of the region's first tech funds.","Capital","Capital","—","DIFC","beco.vc"],
+  ["Shorooq Partners","Multi-stage MENA venture platform.","Capital","Capital","—","DIFC","shorooq.com"],
+  ["Global Ventures","Growth-stage VC across Africa and the Middle East.","Capital","Capital","—","DIFC","global.vc"],
+  ["MEVP","Middle East Venture Partners, seed through growth.","Capital","Capital","—","DIFC","mevp.com"],
+  ["VentureSouq","Thematic fintech and climate fund.","Capital","Capital","—","DIFC","venturesouq.com"],
+  ["COTU Ventures","Pre-seed and seed fund for regional founders.","Capital","Capital","—","DIFC","cotu.vc"],
+  ["Dubai Future District Fund","Government-anchored fund for Dubai-based startups.","Capital","Capital","—","DIFC","dfdf.ae"],
+  ["Wamda Capital","Investor and media platform for MENA tech.","Capital","Capital","—","DIFC","wamda.com"],
+  ["in5","Incubator for tech, design and media founders.","Ecosystem","Ecosystem","—","Dubai Internet City","in5.ae"],
+  ["Dubai Future Foundation","Runs accelerators pairing startups with government.","Ecosystem","Ecosystem","—","Downtown Dubai","dubaifuture.ae"],
+  ["AstroLabs","Coworking hub and market-entry programme.","Ecosystem","Ecosystem","—","JLT / DMCC","astrolabs.com"],
+  ["DIFC Innovation Hub","Fintech licensing, sandbox and accelerator campus.","Ecosystem","Ecosystem","—","DIFC","difc.ae"],
+  ["Expo City Dubai","Post-Expo campus for sustainability ventures.","Ecosystem","Ecosystem","—","Expo City","expocitydubai.com"],
+  ["Dtec","Region's largest startup coworking campus.","Ecosystem","Ecosystem","—","Dubai Silicon Oasis","dtec.ae"],
+  ["GITEX Global","Annual anchor event for regional tech.","Ecosystem","Ecosystem","—","Dubai Marina","gitex.com"],
+  ["DAFZA","Free-zone base for hardware and trade-tech teams.","Ecosystem","Ecosystem","—","DAFZA","dafz.ae"],
+  ["DMCC","Free zone and crypto-centre host for web3 teams.","Ecosystem","Ecosystem","—","JLT / DMCC","dmcc.ae"]
+];
+const items = D.map(([name,desc,type,sector,stage,district,url],i)=>{
+  const [la,ln]=DISTRICTS[district];
+  const a=(i*2.399963)%(Math.PI*2), r=0.0058+((i%5)*0.0016);
+  return {name,desc,type,sector,stage,district,url,lat:la+Math.sin(a)*r*0.85,lng:ln+Math.cos(a)*r};
+});
+const initials=n=>n.replace(/[^A-Za-z ]/g,"").split(" ").filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
+function logoHTML(it,cls){
+  if(!it.url) return `<span>${initials(it.name)}</span>`;
+  return `<img src="https://www.google.com/s2/favicons?sz=128&domain=${it.url}" alt="${it.name} logo" loading="lazy"
+    onerror="this.outerHTML='<span>${initials(it.name)}</span>'">`;
+}
+
+/* filters */
+const sels={type:document.getElementById("f-type"),district:document.getElementById("f-district"),stage:document.getElementById("f-stage"),sector:document.getElementById("f-sector")};
+const uniq=k=>[...new Set(items.map(i=>i[k]))].filter(v=>v&&v!=="—").sort();
+Object.entries(sels).forEach(([k,el])=>{
+  uniq(k).forEach(v=>el.append(Object.assign(document.createElement("option"),{value:v,textContent:v})));
+  el.onchange=render;
+});
+const q=document.getElementById("q");q.oninput=render;
+document.getElementById("reset").onclick=()=>{Object.values(sels).forEach(s=>s.value="");q.value="";render();};
+
+/* map */
+const map=L.map("map",{zoomControl:true}).setView([25.155,55.26],11);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:18}).addTo(map);
+items.forEach(it=>{
+  it._m=L.marker([it.lat,it.lng],{icon:L.divIcon({className:"",html:`<div class="pin">${logoHTML(it)}</div>`,iconSize:[30,30],iconAnchor:[15,15]}),title:it.name});
+  it._m.bindPopup(`<strong>${it.name}</strong><em>${it.sector} · ${it.district}</em><div style="margin-top:6px">${it.desc}</div>${it.url?`<div style="margin-top:8px"><a href="https://${it.url}" target="_blank" rel="noopener" style="color:#0b0f14;border-bottom:1px solid #b6bcc7">${it.url}</a></div>`:""}`);
+});
+const layer=L.layerGroup(items.map(i=>i._m)).addTo(map);
+
+/* view toggle */
+const main=document.getElementById("main"),vMap=document.getElementById("v-map"),vGrid=document.getElementById("v-grid");
+function setView(g){
+  main.classList.toggle("grid-view",g);
+  vMap.setAttribute("aria-pressed",!g);vGrid.setAttribute("aria-pressed",g);
+  if(!g) setTimeout(()=>map.invalidateSize(),60);
+}
+vMap.onclick=()=>setView(false);vGrid.onclick=()=>setView(true);
+
+/* render */
+const list=document.getElementById("list"),count=document.getElementById("count");
+function match(it){
+  for(const k in sels){const v=sels[k].value;if(v&&it[k]!==v)return false;}
+  const s=q.value.trim().toLowerCase();
+  return !s||(it.name+" "+it.desc+" "+it.sector+" "+it.district+" "+it.type).toLowerCase().includes(s);
+}
+function render(){
+  const vis=items.filter(match);
+  layer.clearLayers();vis.forEach(it=>layer.addLayer(it._m));
+  count.textContent=vis.length+" of "+items.length+" shown";
+  list.innerHTML="";
+  if(!vis.length){list.innerHTML='<div class="empty">Nothing matches those filters.</div>';return;}
+  vis.forEach(it=>{
+    const el=document.createElement("div");el.className="card";
+    el.innerHTML=`<div class="logo">${logoHTML(it)}</div>
+      <div><h3>${it.name}</h3><p>${it.desc}</p><div class="tags"><span class="tag">${it.district}</span><span class="tag">${it.sector}</span>${it.stage!=="—"?`<span class="tag">${it.stage}</span>`:""}</div></div>`;
+    el.onclick=()=>{if(main.classList.contains("grid-view"))setView(false);map.setView([it.lat,it.lng],14,{animate:true});it._m.openPopup();};
+    list.appendChild(el);
+  });
+}
+document.getElementById("s-co").textContent=items.length;
+document.getElementById("s-di").textContent=uniq("district").length;
+document.getElementById("s-se").textContent=uniq("sector").length;
+render();
+
+/* submit form */
+const overlay=document.getElementById("overlay"),thanks=document.getElementById("thanks"),formWrap=document.getElementById("form-wrap");
+[["t","type"],["d","district"],["se","sector"],["st","stage"]].forEach(([id,key])=>{
+  const el=document.getElementById(id);
+  el.append(Object.assign(document.createElement("option"),{value:"",textContent:"Select…"}));
+  uniq(key).forEach(v=>el.append(Object.assign(document.createElement("option"),{value:v,textContent:v})));
+  el.append(Object.assign(document.createElement("option"),{value:"Other",textContent:"Other"}));
+});
+const openF=()=>{overlay.classList.add("open");document.getElementById("n").focus();};
+const closeF=()=>{overlay.classList.remove("open");};
+document.getElementById("open-form").onclick=openF;
+document.getElementById("close-form").onclick=closeF;
+document.getElementById("close-thanks").onclick=()=>{closeF();formWrap.style.display="";thanks.classList.remove("on");};
+overlay.onclick=e=>{if(e.target===overlay)closeF();};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeF();});
+document.getElementById("submit-form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const f=e.target,btn=f.querySelector('button[type=submit]');btn.textContent="Sending…";btn.disabled=true;
+  fetch(f.action,{method:"POST",body:new FormData(f),headers:{Accept:"application/json"}})
+    .then(r=>{if(!r.ok)throw 0;formWrap.style.display="none";thanks.classList.add("on");f.reset();})
+    .catch(()=>{
+      let e=document.getElementById("err");
+      if(!e){e=document.createElement("p");e.id="err";e.className="hint";e.style.cssText="color:#ff9c8a;margin:14px 0 0";f.appendChild(e);}
+      e.textContent="Couldn't send just now. Email the details to anieeshmenon@gmail.com and we'll add it.";
+    })
+    .finally(()=>{btn.textContent="Send submission";btn.disabled=false;});
+});
+</script>
+</body>
+</html>
