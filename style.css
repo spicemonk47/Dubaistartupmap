@@ -1,0 +1,181 @@
+:root{
+  --bg:#05070c; --glass:rgba(10,14,22,.82); --glass-2:rgba(12,17,27,.94);
+  --line:rgba(120,160,210,.16); --line-2:rgba(120,160,210,.28);
+  --text:#e9f1fb; --muted:#8d9bb2; --dim:#64728a;
+  --cyan:#00f0ff; --lime:#b6ff3b;
+  --mono:"Geist Mono",ui-monospace,monospace; --disp:"Unbounded",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font:400 14px/1.45 "Geist",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--cyan);text-decoration:none}
+a:hover{color:#fff}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+
+#map{position:fixed;inset:0;background:#070b12}
+.leaflet-container{background:#070b12;font-family:"Geist",sans-serif}
+.leaflet-tile-pane{filter:invert(.95) hue-rotate(195deg) saturate(.7) brightness(.7) contrast(1.15)}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:401;
+  background:radial-gradient(ellipse at 45% 45%,transparent 40%,rgba(3,5,9,.7) 100%),
+    linear-gradient(rgba(0,240,255,.03) 1px,transparent 1px) 0 0/48px 48px,
+    linear-gradient(90deg,rgba(0,240,255,.03) 1px,transparent 1px) 0 0/48px 48px}
+.leaflet-control-attribution{background:rgba(5,7,12,.7)!important;color:var(--dim)!important;font:10px var(--mono)}
+.leaflet-control-attribution a{color:var(--dim)!important}
+.leaflet-bottom.leaflet-left{bottom:78px}
+.leaflet-bar{border:1px solid var(--line-2)!important;box-shadow:none!important;border-radius:10px!important;overflow:hidden}
+.leaflet-bar a{background:var(--glass)!important;color:var(--text)!important;border-color:var(--line)!important}
+.leaflet-bar a:hover{color:var(--cyan)!important}
+.leaflet-tooltip{background:var(--glass-2);color:var(--text);border:1px solid var(--line-2);border-radius:8px;font:500 12px "Geist",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);padding:6px 10px}
+.leaflet-tooltip-top:before{border-top-color:var(--line-2)}
+.leaflet-tooltip small{display:block;font:10px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+
+.plabel{font:500 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:rgba(200,222,245,.7);text-shadow:0 0 6px #000,0 1px 2px #000;white-space:nowrap;pointer-events:none}
+.pin{width:34px;height:34px;border-radius:10px;background:#fff;display:grid;place-items:center;overflow:hidden;cursor:pointer;
+  box-shadow:0 0 0 2px var(--c),0 0 16px color-mix(in oklab,var(--c) 65%,transparent);transition:transform .15s}
+.pin:hover{transform:scale(1.18)}
+.pin.on{transform:scale(1.3);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--c),0 0 30px var(--c)}
+.leaflet-container .leaflet-marker-pane .pin img{width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain;padding:3px!important;display:block}
+.pin span,.lg span{font:700 11px var(--disp);color:#0a0e16}
+.cl{position:relative;display:grid;place-items:center;border-radius:50%;cursor:pointer;transition:transform .15s;
+  background:color-mix(in oklab,var(--c) 20%,rgba(5,8,14,.78));border:1.5px solid var(--c);
+  box-shadow:0 0 24px color-mix(in oklab,var(--c) 55%,transparent),inset 0 0 18px color-mix(in oklab,var(--c) 30%,transparent)}
+.cl:hover{transform:scale(1.08)}
+.cl b{font:700 15px var(--disp);color:#fff;text-shadow:0 0 10px var(--c)}
+.cl:after{content:"";position:absolute;inset:-8px;border-radius:50%;border:1px dashed color-mix(in oklab,var(--c) 45%,transparent)}
+
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-radius:16px}
+.top{position:fixed;z-index:1000;top:14px;left:14px;right:14px;display:flex;gap:10px;align-items:center;pointer-events:none}
+.top > *{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:0 16px 0 11px;height:52px}
+.wm{display:flex;align-items:flex-end;font:700 20px/1 var(--disp);letter-spacing:-.01em;padding-left:5px}
+.wm i{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);margin:0 0 2px 3px}
+.sep{width:1px;height:24px;background:var(--line-2)}
+.brand h1{margin:0;font:500 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--text);white-space:nowrap}
+.brand p{margin:3px 0 0;font:10px var(--mono);color:var(--cyan);letter-spacing:.14em;white-space:nowrap}
+.search{flex:1;max-width:520px;display:flex;align-items:center;gap:10px;height:52px;padding:0 16px;cursor:text}
+.search svg{flex:none;opacity:.6}
+.search input{flex:1;background:none;border:0;outline:none;color:var(--text);font:400 14px "Geist",sans-serif;min-width:0}
+.search input::placeholder{color:var(--dim)}
+.search:focus-within{border-color:rgba(0,240,255,.5)}
+.search kbd{font:10px var(--mono);color:var(--dim);border:1px solid var(--line-2);border-radius:5px;padding:2px 6px}
+.kpis{display:flex;gap:22px;padding:0 18px;height:52px;align-items:center;margin-left:auto}
+.kpi b{display:block;font:700 16px var(--disp);line-height:1.1}
+.kpi i{font:normal 9.5px var(--mono);color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.btn{height:52px;padding:0 20px;border-radius:14px;border:0;background:var(--cyan);color:#00181b;font:600 13.5px "Geist",sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 0 26px rgba(0,240,255,.4);white-space:nowrap}
+.btn:hover{background:#7ff8ff}
+.btn.sm{height:40px;border-radius:10px;padding:0 15px;font-size:13px;box-shadow:none}
+.btn.ghost{background:transparent;border:1px solid var(--line-2);color:var(--text)}
+.btn.ghost:hover{background:rgba(255,255,255,.05);color:#fff}
+.btn:disabled{opacity:.6;cursor:wait}
+
+.panel,.drawer{position:fixed;z-index:1000;top:80px;right:14px;bottom:14px;width:400px;display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--line)}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:9px;font:500 13px "Geist",sans-serif;cursor:pointer;display:flex;gap:7px;align-items:center;justify-content:center}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{background:rgba(0,240,255,.1);color:var(--cyan);box-shadow:inset 0 0 0 1px rgba(0,240,255,.35)}
+.tab small{font:10.5px var(--mono);opacity:.75}
+.pane{display:flex;flex-direction:column;flex:1;min-height:0}
+.filters{padding:12px 14px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid var(--line)}
+.seg{display:flex;gap:3px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:none;color:var(--muted);font:500 12px "Geist",sans-serif;padding:7px 4px;border-radius:7px;cursor:pointer}
+.seg button:hover{color:#fff}
+.seg button[aria-pressed="true"]{background:var(--text);color:#06090f}
+.selects{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+select{appearance:none;background:rgba(255,255,255,.03) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238d9bb2' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center;
+  border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 28px 9px 11px;font:400 12.5px "Geist",sans-serif;outline:none;cursor:pointer;width:100%}
+select:focus{border-color:var(--cyan)}
+select option{background:#0c111b}
+.meta{display:flex;justify-content:space-between;padding:10px 16px 6px;font:10px var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+.meta button{background:none;border:0;color:var(--muted);font:inherit;letter-spacing:inherit;cursor:pointer;padding:0}
+.meta button:hover{color:var(--cyan)}
+.list{flex:1;overflow-y:auto;padding:4px 8px 8px;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 8px;border-radius:11px;cursor:pointer;border:1px solid transparent}
+.row:hover{background:rgba(255,255,255,.04);border-color:var(--line)}
+.lg{width:40px;height:40px;border-radius:10px;background:#fff;display:grid;place-items:center;overflow:hidden;flex:none}
+.lg img{width:100%;height:100%;object-fit:contain;padding:4px}
+.row h3{margin:0;font:600 14px "Geist",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row p{margin:2px 0 0;font:11px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+
+.spot{display:flex;flex-direction:column;gap:10px;padding:6px 4px}
+.scard{position:relative;border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;overflow:hidden;background:linear-gradient(160deg,color-mix(in oklab,var(--c) 12%,transparent),transparent 60%)}
+.scard:hover{border-color:color-mix(in oklab,var(--c) 60%,transparent)}
+.scard .hd{display:flex;gap:12px;align-items:center}
+.scard .lg{width:48px;height:48px;border-radius:12px}
+.scard h3{margin:0;font:700 15px var(--disp)}
+.scard .tg{font:10px var(--mono);color:var(--c);letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
+.scard p{margin:12px 0 0;color:#c4cfdf;font-size:13px;text-wrap:pretty}
+.scard .no{position:absolute;top:14px;right:16px;font:10px var(--mono);color:var(--dim)}
+
+.news{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.news label{font:10px var(--mono);color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.news form{display:flex;gap:6px}
+.news input{flex:1;min-width:0;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:40px;color:var(--text);font:13px "Geist",sans-serif;outline:none}
+.news input:focus{border-color:var(--cyan)}
+.news .msg{font:11px var(--mono);color:var(--lime)}
+
+.drawer{z-index:1001;background:var(--glass-2);transform:translateX(calc(100% + 30px));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+.drawer.open{transform:none}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.dlabel{font:10px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line-2);background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{color:#fff;border-color:var(--cyan)}
+.dbody{flex:1;overflow-y:auto;padding:22px 20px 24px;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+.dhero{display:flex;gap:16px;align-items:center}
+.dhero .lg{width:72px;height:72px;border-radius:18px;box-shadow:0 0 0 2px var(--c),0 0 30px color-mix(in oklab,var(--c) 50%,transparent)}
+.dhero .lg img{padding:8px}
+.dhero .lg span{font-size:20px}
+.dhero h2{margin:0;font:700 21px/1.2 var(--disp);text-wrap:balance}
+.dhero .tg{margin-top:6px;font:10.5px var(--mono);color:var(--c);letter-spacing:.12em;text-transform:uppercase}
+.ddesc{margin:20px 0 0;font-size:15px;line-height:1.55;color:#d4deeb;text-wrap:pretty}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:20px}
+.facts div{background:#0b1019;padding:12px 14px}
+.facts i{display:block;font:normal 9.5px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+.facts b{display:block;margin-top:4px;font:500 13.5px "Geist",sans-serif}
+.dact{display:flex;gap:8px;margin-top:16px}
+.dact .btn{flex:1;justify-content:center;text-decoration:none}
+.near{margin-top:26px}
+.near h4{margin:0 0 6px 8px;font:400 10px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
+.near .row{padding-left:8px}
+
+.sbar{position:fixed;z-index:1000;left:14px;right:428px;bottom:14px;height:56px;display:flex;align-items:center;gap:4px;padding:0 8px;overflow-x:auto;scrollbar-width:none}
+.sbar::-webkit-scrollbar{display:none}
+.sbar .lab{flex:none;font:10px var(--mono);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;padding:0 8px 0 6px}
+.sc{flex:none;display:flex;align-items:center;gap:8px;border:1px solid transparent;background:transparent;padding:7px 11px;border-radius:10px;cursor:pointer;color:var(--muted);font:500 12.5px "Geist",sans-serif}
+.sc:hover{color:#fff;background:rgba(255,255,255,.04)}
+.sc[aria-pressed="true"]{color:#fff;border-color:color-mix(in oklab,var(--c) 70%,transparent);background:color-mix(in oklab,var(--c) 14%,transparent)}
+.sc .bar{width:30px;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.sc .bar i{display:block;height:100%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.sc small{font:11px var(--mono);color:var(--dim)}
+.sc[aria-pressed="true"] small{color:#fff}
+
+.overlay{position:fixed;inset:0;z-index:2000;background:rgba(2,4,8,.72);backdrop-filter:blur(6px);display:none;place-items:center;padding:20px;overflow-y:auto}
+.overlay.open{display:grid}
+.modal{width:min(580px,100%);padding:28px;background:#0a0f18;border:1px solid var(--line-2);border-radius:20px;box-shadow:0 0 60px rgba(0,240,255,.08)}
+.modal h2{margin:0;font:700 22px var(--disp)}
+.modal .hint{margin:8px 0 22px;color:var(--muted);font-size:13.5px;text-wrap:pretty}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font:10px var(--mono);color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.field input,.field textarea{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:13.5px "Geist",sans-serif;outline:none}
+.field textarea{min-height:84px;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--cyan)}
+.mact{display:flex;gap:8px;justify-content:flex-end;margin-top:22px}
+.err{color:#ff8fa8;font:12px var(--mono);margin-top:12px;display:none}
+.thanks{display:none;text-align:center;padding:12px 0}
+
+@media (max-width:860px){
+  .kpis,.search kbd,.brand p{display:none}
+  .top{flex-wrap:wrap;left:8px;right:8px;top:8px}
+  .brand{flex:1}
+  .search{order:3;flex-basis:100%;max-width:none;height:46px}
+  .btn{padding:0 16px}
+  .panel,.drawer{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:46vh}
+  .drawer{transform:translateY(calc(100% + 30px))}
+  .sbar{left:8px;right:8px;top:124px;bottom:auto;height:46px}
+  .fields{grid-template-columns:1fr}
+  .leaflet-bottom.leaflet-left{bottom:calc(46vh + 16px)}
+}
